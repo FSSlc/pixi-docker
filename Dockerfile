@@ -1,10 +1,28 @@
 FROM centos:7
 
+# buildx 会注入 TARGETPLATFORM，形式例如: "linux/amd64" 或 "linux/arm64"
+ARG TARGETPLATFORM
+
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN curl -fsSL https://pixi.sh/install.sh | sh; \
+RUN set -eux; \
+    case "$TARGETPLATFORM" in \
+      "linux/amd64") \
+        sed -i -e 's|^mirrorlist=|#mirrorlist=|g' \
+               -e 's|^#baseurl=http://mirror.centos.org/centos/$releasever|baseurl=https://mirrors.aliyun.com/centos-vault/7.9.2009|g' /etc/yum.repos.d/CentOS-*.repo;; \
+      "linux/arm64") \
+        mkdir -p /etc/yum.repos.d/bk && \
+        mv /etc/yum.repos.d/*.repo /etc/yum.repos.d/bk && \
+        curl -fsSL http://mirrors.aliyun.com/repo/Centos-altarch-7.repo -o /etc/yum.repos.d/CentOS-Base.repo;; \
+      *) \
+        echo "Unsupported TARGETPLATFORM=$TARGETPLATFORM"; exit 1;; \
+    esac; \
+    yum makecache fast; \
+    yum install -y unzip which htop vim; \
+    curl -fsSL https://pixi.sh/install.sh | sh; \
     printf '\neval "$(pixi completion --shell bash)"\n' >> /root/.bashrc || true; \
-    /root/.pixi/bin/pixi global install -e tools rattler-build git; \
+    /root/.pixi/bin/pixi global install -e tools rattler-build git conda conda-build conda-recipe-manager constructor; \
+    yum clean all && \
     rm -rf /root/.cache
 
 ENV PATH="/root/.pixi/bin:${PATH}"
