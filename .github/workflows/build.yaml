@@ -41,6 +41,3 @@ jobs:
           push: true
           tags: |
             ghcr.io/fsslc/pixi:latest
-            ghcr.io/fsslc/pixi:${{ github.sha }}
-          cache-from: type=registry,ref=ghcr.io/fsslc/pixi:cache
-          cache-to: type=registry,ref=ghcr.io/fsslc/pixi:cache,mode=max
