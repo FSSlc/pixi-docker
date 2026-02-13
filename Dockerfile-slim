@@ -23,7 +23,7 @@ RUN yum makecache fast; \
 
 RUN curl -fsSL https://pixi.sh/install.sh | sh; \
     printf '\neval "$(pixi completion --shell bash)"\n' >> /root/.bashrc || true; \
-    /root/.pixi/bin/pixi global install -e tools rattler-build git conda conda-build conda-recipe-manager constructor; \
+    /root/.pixi/bin/pixi global install -e tools rattler-build; \
     rm -rf /root/.cache
 
 ENV PATH="/root/.pixi/bin:${PATH}"

@@ -32,7 +32,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push multi-arch image
+      - name: Build and push multi-arch image - slim
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile-slim
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/fsslc/pixi:slim
+
+      - name: Build and push multi-arch image - normal
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -41,3 +51,13 @@ jobs:
           push: true
           tags: |
             ghcr.io/fsslc/pixi:latest
+
+      - name: Build and push multi-arch image - gui
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile-gui
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/fsslc/pixi:gui

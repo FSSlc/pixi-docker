@@ -18,7 +18,14 @@ RUN set -eux; \
     esac;
 
 RUN yum makecache fast; \
-    yum install -y unzip which htop vim; \
+    yum install -y alsa-lib binutils coreutils chrpath dbus-devel file findutils \
+    gtk2-devel help2man libICE-devel libselinux libstdc++-devel which \
+    libSM-devel libSM-devel libstdc++-static libx11 libX11-devel \
+    libXcomposite libXcursor libXdamage libXext libXext-devel libXi \
+    libXrender-devel libXrender-devel libXScrnSaver libxshmfence-devel \
+    libXt-devel libXtst libXxf86vm libXxf86vm-devel m4 make mesa-dri-drivers \
+    mesa-libGL mesa-libglapi patch rsync sed texinfo wget \
+    xorg-x11-proto-devel xorg-x11-server-Xvfb ; \
     yum clean all
 
 RUN curl -fsSL https://pixi.sh/install.sh | sh; \
