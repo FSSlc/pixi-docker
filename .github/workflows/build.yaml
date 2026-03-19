@@ -1,63 +1,117 @@
-name: Build and push multi-arch image
+name: Build and push multi-arch images
 
 on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
   workflow_dispatch:
-  release:
-    types: [created]
+    inputs:
+      pixi_version:
+        description: Override Pixi version tag, for example v0.63.0
+        required: false
+        type: string
 
 permissions:
   contents: read
   packages: write
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: fsslc/pixi
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: slim
+            tag_suffix: slim
+            version_suffix: -slim
+            smoke_test: pixi --version && rattler-build --version && rattler-index --version
+          - target: normal
+            tag_suffix: latest
+            version_suffix: ""
+            smoke_test: pixi --version && git --version && conda --version && rattler-build --version
+          - target: gui
+            tag_suffix: gui
+            version_suffix: -gui
+            smoke_test: pixi --version && git --version && conda --version && Xvfb -help >/dev/null
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up QEMU (for emulation)
-        uses: docker/setup-qemu-action@v2
+      - name: Resolve Pixi version
+        id: pixi-version
+        shell: bash
+        run: |
+          set -euo pipefail
+          requested_version="${{ github.event.inputs.pixi_version }}"
+          if [[ -n "${requested_version}" ]]; then
+            version="${requested_version}"
+          else
+            version="$(tr -d '\n' < .pixi-version)"
+          fi
+          if [[ -z "${version}" ]]; then
+            echo "Pixi version is empty" >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push multi-arch image - slim
-        uses: docker/build-push-action@v4
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          context: .
-          file: ./Dockerfile-slim
-          platforms: linux/amd64,linux/arm64
-          push: true
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            ghcr.io/fsslc/pixi:slim
+            type=raw,value=${{ matrix.tag_suffix }}
+            type=sha,prefix=${{ matrix.tag_suffix }}-
+            type=ref,event=tag,suffix=${{ matrix.version_suffix }}
 
-      - name: Build and push multi-arch image - normal
-        uses: docker/build-push-action@v4
+      - name: Build smoke-test image
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/fsslc/pixi:latest
+          target: ${{ matrix.target }}
+          platforms: linux/amd64
+          build-args: |
+            PIXI_VERSION=${{ steps.pixi-version.outputs.version }}
+          load: true
+          push: false
+          tags: local/${{ matrix.target }}:smoke
 
-      - name: Build and push multi-arch image - gui
-        uses: docker/build-push-action@v4
+      - name: Run smoke test
+        run: docker run --rm local/${{ matrix.target }}:smoke /bin/bash -lc '${{ matrix.smoke_test }}'
+
+      - name: Build and push multi-arch image
+        uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile-gui
+          file: ./Dockerfile
+          target: ${{ matrix.target }}
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            PIXI_VERSION=${{ steps.pixi-version.outputs.version }}
           push: true
-          tags: |
-            ghcr.io/fsslc/pixi:gui
+          provenance: false
+          sbom: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
