@@ -35,7 +35,7 @@ RUN set -eux; \
 
 FROM centos7-base AS pixi-bootstrap
 
-ARG PIXI_VERSION=v0.66.0
+ARG PIXI_VERSION=v0.67.0
 ARG PIXI_HOME=/root/.pixi
 ARG PIXI_GLOBAL_CHANNELS=conda-forge
 
