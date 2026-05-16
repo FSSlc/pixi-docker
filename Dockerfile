@@ -30,8 +30,10 @@ RUN set -eux; \
       unzip \
       vim \
       which; \
+    localedef -c -f UTF-8 -i en_US en_US.UTF-8; \
     yum clean all; \
     rm -rf /var/cache/yum
+ENV LC_ALL=en_US.UTF-8
 
 FROM centos7-base AS pixi-bootstrap
 
