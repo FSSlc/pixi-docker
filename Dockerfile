@@ -61,7 +61,7 @@ RUN set -eux; \
 FROM pixi-bootstrap AS normal
 
 ARG PIXI_GLOBAL_CHANNELS=conda-forge
-ARG PIXI_NORMAL_SPECS="constructor 'conda 24.*' 'conda-build 24.*' conda-recipe-manager git rattler-build rattler-index"
+ARG PIXI_NORMAL_SPECS='constructor "conda 24.*" "conda-build 24.*" conda-recipe-manager git rattler-build rattler-index'
 
 RUN set -eux; \
     pixi global install -e tools -c "${PIXI_GLOBAL_CHANNELS}" ${PIXI_NORMAL_SPECS}; \
@@ -117,7 +117,7 @@ RUN set -eux; \
     rm -rf /var/cache/yum
 
 ARG PIXI_GLOBAL_CHANNELS=conda-forge
-ARG PIXI_NORMAL_SPECS="constructor 'conda 24.*' 'conda-build 24.*' conda-recipe-manager git rattler-build rattler-index"
+ARG PIXI_NORMAL_SPECS='constructor "conda 24.*" "conda-build 24.*" conda-recipe-manager git rattler-build rattler-index'
 
 RUN set -eux; \
     pixi global install -e tools -c "${PIXI_GLOBAL_CHANNELS}" ${PIXI_NORMAL_SPECS}; \
