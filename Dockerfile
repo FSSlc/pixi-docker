@@ -26,7 +26,7 @@ RUN set -eux; \
     sed -i 's/override_install_langs=en_US.utf8/#override_install_langs=en_US.utf8/g' /etc/yum.conf && \
     yum reinstall -y glibc-common && \
     yum clean all && \
-    localedef -v -c -i POSIX -f UTF-8 C.UTF-8
+    localedef -v -c -i POSIX -f UTF-8 C.UTF-8 && \
     yum install -y \
       ca-certificates \
       curl \
