@@ -23,6 +23,10 @@ RUN set -eux; \
         ;; \
     esac; \
     yum makecache fast; \
+    sed -i 's/override_install_langs=en_US.utf8/#override_install_langs=en_US.utf8/g' /etc/yum.conf && \
+    yum reinstall -y glibc-common && \
+    yum clean all && \
+    localedef -v -c -i POSIX -f UTF-8 C.UTF-8
     yum install -y \
       ca-certificates \
       curl \
@@ -30,10 +34,10 @@ RUN set -eux; \
       unzip \
       vim \
       which; \
-    localedef -c -f UTF-8 -i en_US en_US.UTF-8; \
     yum clean all; \
     rm -rf /var/cache/yum
-ENV LC_ALL=en_US.UTF-8
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
 FROM centos7-base AS pixi-bootstrap
 
