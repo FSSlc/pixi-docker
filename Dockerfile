@@ -22,10 +22,9 @@ RUN set -eux; \
         exit 1 \
         ;; \
     esac; \
-    yum makecache fast; \
     sed -i 's/override_install_langs=en_US.utf8/#override_install_langs=en_US.utf8/g' /etc/yum.conf && \
+    yum makecache fast; \
     yum reinstall -y glibc-common && \
-    yum clean all && \
     localedef -v -c -i POSIX -f UTF-8 C.UTF-8 && \
     yum install -y \
       ca-certificates \
@@ -43,7 +42,8 @@ FROM centos7-base AS pixi-bootstrap
 
 ARG PIXI_VERSION=v0.71.3
 ARG PIXI_HOME=/root/.pixi
-ARG PIXI_GLOBAL_CHANNELS=conda-forge
+ARG PIXI_GLOBAL_CHANNELS=https://prefix.dev/conda-forge
+ARG PIXI_EXTRA_CHANNELS=https://prefix.dev/scns
 
 ENV PIXI_HOME=${PIXI_HOME}
 ENV PATH=${PIXI_HOME}/bin:${PATH}
@@ -55,7 +55,7 @@ RUN set -eux; \
 
 FROM pixi-bootstrap AS slim
 
-ARG PIXI_GLOBAL_CHANNELS=conda-forge
+ARG PIXI_GLOBAL_CHANNELS=https://prefix.dev/conda-forge
 ARG PIXI_SLIM_SPECS="rattler-build rattler-index"
 
 RUN set -eux; \
@@ -64,11 +64,13 @@ RUN set -eux; \
 
 FROM pixi-bootstrap AS normal
 
-ARG PIXI_GLOBAL_CHANNELS=conda-forge
-ARG PIXI_NORMAL_SPECS='constructor conda=25.7.* conda-build=25.7.* conda-recipe-manager git rattler-build rattler-index'
+ARG PIXI_GLOBAL_CHANNELS=https://prefix.dev/conda-forge
+ARG PIXI_EXTRA_CHANNELS=https://prefix.dev/scns
+ARG PIXI_NORMAL_SPECS='constructor=3.3.* conda=22.9.* conda-build=3.22.*'
 
 RUN set -eux; \
-    pixi global install -e tools -c "${PIXI_GLOBAL_CHANNELS}" ${PIXI_NORMAL_SPECS}; \
+    pixi global install -e tools -c "${PIXI_GLOBAL_CHANNELS}" conda-recipe-manager git rattler-build rattler-index; \
+    pixi global install -e tools -c "${PIXI_EXTRA_CHANNELS}" ${PIXI_NORMAL_SPECS}; \
     rm -rf /root/.cache "${PIXI_HOME}/cache"
 
 FROM pixi-bootstrap AS gui-builder
@@ -120,11 +122,13 @@ RUN set -eux; \
     yum clean all; \
     rm -rf /var/cache/yum
 
-ARG PIXI_GLOBAL_CHANNELS=conda-forge
-ARG PIXI_NORMAL_SPECS='constructor conda=25.7.* conda-build=25.7.* conda-recipe-manager git rattler-build rattler-index'
+ARG PIXI_GLOBAL_CHANNELS=https://prefix.dev/conda-forge
+ARG PIXI_EXTRA_CHANNELS=https://prefix.dev/scns
+ARG PIXI_NORMAL_SPECS='constructor=3.3.* conda=22.9.* conda-build=3.22.*'
 
 RUN set -eux; \
-    pixi global install -e tools -c "${PIXI_GLOBAL_CHANNELS}" ${PIXI_NORMAL_SPECS}; \
+    pixi global install -e tools -c "${PIXI_GLOBAL_CHANNELS}" conda-recipe-manager git rattler-build rattler-index; \
+    pixi global install -e tools -c "${PIXI_EXTRA_CHANNELS}" ${PIXI_NORMAL_SPECS}; \
     rm -rf /root/.cache "${PIXI_HOME}/cache"
 
 FROM gui-builder AS gui
