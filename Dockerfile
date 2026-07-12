@@ -34,25 +34,25 @@ RUN set -eux; \
       vim \
       which; \
     yum clean all; \
-    rm -rf /var/cache/yum
-ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
-
-# Create builder user and group with uid:gid = 1000:1000
-RUN set -eux; \
+    rm -rf /var/cache/yum; \
     groupadd -g 1000 builder; \
     useradd -m -g builder -u 1000 builder; \
     mkdir -p /home/builder/.pixi; \
     chown -R builder:builder /home/builder
 
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+
 FROM centos7-base AS pixi-bootstrap
 
 ARG PIXI_VERSION=v0.72.2
-ARG PIXI_HOME=/root/.pixi
+ARG PIXI_HOME=/home/builder/.pixi
 ARG PIXI_GLOBAL_CHANNELS=conda-forge
 ARG PIXI_SLIM_SPECS="rattler-build rattler-index"
 ARG PIXI_NORMAL_SPECS='constructor conda=25.7.* conda-build=25.7.* conda-recipe-manager git rattler-build rattler-index'
 
 ENV PIXI_HOME=${PIXI_HOME} PATH=${PIXI_HOME}/bin:${PATH}
+
+USER builder
 
 RUN set -eux; \
     export PIXI_VERSION PIXI_HOME PIXI_NO_PATH_UPDATE=1; \
@@ -63,20 +63,17 @@ FROM pixi-bootstrap AS slim
 
 RUN set -eux; \
     pixi global install -e tools -c "${PIXI_GLOBAL_CHANNELS}" ${PIXI_SLIM_SPECS}; \
-    rm -rf /root/.cache "${PIXI_HOME}/cache"
-
-USER builder
+    rm -rf $HOME/.cache "${PIXI_HOME}/cache"
 
 FROM pixi-bootstrap AS normal
 
 RUN set -eux; \
     pixi global install -e tools -c "${PIXI_GLOBAL_CHANNELS}" ${PIXI_NORMAL_SPECS}; \
+    rm -rf $HOME/.cache "${PIXI_HOME}/cache"
 
-    rm -rf /root/.cache "${PIXI_HOME}/cache"
+FROM pixi-bootstrap AS gui
 
-USER builder
-
-FROM pixi-bootstrap AS gui-builder
+USER root
 
 RUN set -eux; \
     yum makecache fast; \
@@ -125,13 +122,8 @@ RUN set -eux; \
     yum clean all; \
     rm -rf /var/cache/yum
 
+USER builder
+
 RUN set -eux; \
     pixi global install -e tools -c "${PIXI_GLOBAL_CHANNELS}" ${PIXI_NORMAL_SPECS}; \
-
-    rm -rf /root/.cache "${PIXI_HOME}/cache"
-
-USER builder
-
-FROM gui-builder AS gui
-
-USER builder
+    rm -rf $HOME/.cache "${PIXI_HOME}/cache"
