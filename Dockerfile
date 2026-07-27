@@ -40,7 +40,7 @@ ENV LC_ALL=C.UTF-8
 
 FROM centos7-base AS pixi-bootstrap
 
-ARG PIXI_VERSION=v0.73.0
+ARG PIXI_VERSION=v0.74.0
 ARG PIXI_HOME=/root/.pixi
 ARG PIXI_GLOBAL_CHANNELS=conda-forge
 
